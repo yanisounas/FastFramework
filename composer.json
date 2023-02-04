@@ -1,0 +1,10 @@
+{
+    "name": "oy/framework",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src",
+            "FastFramework\\": "./FastFramework/"
+        }
+    },
+    "require": {}
+}
