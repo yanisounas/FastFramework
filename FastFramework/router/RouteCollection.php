@@ -19,6 +19,9 @@ class RouteCollection
     }
 
     /**
+     * @param Route $route
+     * @param callable|array $callback
+     * @return void
      * @throws RouteAlreadyDeclared
      */
     public function add(Route $route, callable|array $callback): void
@@ -29,6 +32,10 @@ class RouteCollection
         $this->_data[$route->getPath()] = ["route" => $route, "callback" => $callback];
     }
 
+    /**
+     * @param string $path
+     * @return array|bool
+     */
     public function match(string $path): array|bool
     {
         foreach ($this->_data as $data)

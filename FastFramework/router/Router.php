@@ -7,6 +7,7 @@ use FastFramework\Router\Exceptions\MethodNotSupported;
 use FastFramework\Router\Exceptions\RouteAlreadyDeclared;
 use FastFramework\Router\Exceptions\RouteNotFound;
 use ReflectionException;
+use ReflectionMethod;
 
 class Router
 {
@@ -18,7 +19,10 @@ class Router
     }
 
     /**
-     * @throws ReflectionException|RouteAlreadyDeclared
+     * @param string ...$controller
+     * @return void
+     * @throws ReflectionException
+     * @throws RouteAlreadyDeclared
      */
     public function loadFromController(string ...$controller): void
     {
@@ -28,7 +32,9 @@ class Router
     }
 
     /**
-     * @throws RouteNotFound|MethodNotSupported
+     * @return mixed
+     * @throws MethodNotSupported
+     * @throws RouteNotFound
      */
     public function listen(): mixed
     {
@@ -41,7 +47,11 @@ class Router
         return call_user_func_array($match["callback"], $match["route"]->getMatches());
     }
 
-    private function _isRoute(\ReflectionMethod $method): bool|Route
+    /**
+     * @param ReflectionMethod $method
+     * @return bool|Route
+     */
+    private function _isRoute(ReflectionMethod $method): bool|Route
     {
         return (empty($method->getAttributes(Route::class))) ? false : $method->getAttributes(Route::class)[0]->newInstance();
     }
