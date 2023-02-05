@@ -6,5 +6,7 @@
             "FastFramework\\": "FastFramework/"
         }
     },
-    "require": {}
+    "require": {
+      "ext-fileinfo": "*"
+    }
 }
