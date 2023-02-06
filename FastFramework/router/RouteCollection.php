@@ -27,7 +27,7 @@ class RouteCollection
     public function add(Route $route, callable|array $callback): void
     {
         if (isset($this->_data[$route->getPath()])) throw new RouteAlreadyDeclared("Route ". $route->getPath() . " already exists");
-        if (is_array($callback)) $callback = [new $callback[0](), $callback[1]];
+        if (!is_callable($callback)) $callback = [new $callback[0](), $callback[1]];
 
         $this->_data[$route->getPath()] = ["route" => $route, "callback" => $callback];
     }
