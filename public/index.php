@@ -1,5 +1,7 @@
 <?php
 //TODO: Exceptions code and messages
+//TODO: Use "realpath" in some cases instead of DIRECTORY_SEPARATOR + can help to guess the absolute path
+
 if (is_file($_SERVER["DOCUMENT_ROOT"] . $_SERVER["REQUEST_URI"]))
 {
     if (array_slice(explode('.', $_SERVER["REQUEST_URI"]), -1)[0] == "css")
@@ -14,6 +16,8 @@ if (is_file($_SERVER["DOCUMENT_ROOT"] . $_SERVER["REQUEST_URI"]))
 require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR . "autoload.php";
 
 $router = new \FastFramework\Router\Router();
-
-$router->loadFromController(\App\Controller\HomeController::class);
-$router->listen();
+try {
+    $router->findAndLoad()->listen();
+} catch (Exception $e) {
+    throw new \RuntimeException($e->getMessage());
+}

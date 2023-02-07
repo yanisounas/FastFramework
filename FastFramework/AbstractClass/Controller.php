@@ -29,14 +29,11 @@ class Controller
         return new JSONResponse($content, $statusCode);
     }
 
-    /**
-     * @param string $path
-     * @param array|null $args
-     * @param int|null $statusCode
-     * @return View
-     */
-    public function view(string $path, ?array $args = null, ?int $statusCode = null): View
+    public function view(string $path, ?array $args = null, int $statusCode = null, bool $extract = true): View
     {
-        return new View($path, $statusCode, args: $args);
+        return new View(view: dirname($_SERVER["DOCUMENT_ROOT"]) . DIRECTORY_SEPARATOR . "template" . DIRECTORY_SEPARATOR . ((str_contains($path, ".php")) ? $path : "$path.php"),
+            statusCode: $statusCode,
+            args: $args,
+            extract: $extract);
     }
 }

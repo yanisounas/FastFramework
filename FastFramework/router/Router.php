@@ -2,6 +2,8 @@
 
 namespace FastFramework\Router;
 
+use Exception;
+use FastFramework\FileSystem\Utils;
 use FastFramework\Router\Attributes\Route;
 use FastFramework\Router\Exceptions\MethodNotSupported;
 use FastFramework\Router\Exceptions\RouteAlreadyDeclared;
@@ -29,6 +31,40 @@ class Router
         foreach ($controller as $c)
             foreach ((new \ReflectionClass($c))->getMethods() as $method)
                 if ($route = $this->_isRoute($method)) $this->_routeCollection->add($route, [$c, $method->getName()]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function findAndLoad(): Router
+    {
+        $controllers = $this->_getControllers();
+        $this->loadFromController(...$controllers);
+        return $this;
+    }
+
+    /**
+     * @param string|null $dir
+     * @param string|null $suffix
+     * @return array
+     * @throws Exception
+     */
+    private function _getControllers(?string $dir = null, ?string $suffix = null): array
+    {
+        $controllers = [];
+        $suffix = trim($suffix, "\\");
+        $controllerNamespace = trim("App\\Controller\\" . ($suffix ?? "$suffix"), "\\");
+
+        $dir = ($dir == null) ? Utils::guessPathByNamespace($controllerNamespace) : realpath("$dir/" . ($suffix ?? "$suffix/"));
+        if ($dir === false) throw new Exception("Can't find the controllers directory.");
+
+        foreach (array_diff(scandir($dir), [".", "..", ".gitignore"]) as $path)
+        {
+            $subject = $dir . DIRECTORY_SEPARATOR . $path;
+            if (is_file($subject)) $controllers[] = $controllerNamespace . "\\" . explode(".", $path)[0];
+            if (is_dir($subject)) $controllers = array_merge($controllers, $this->_getControllers($dir, $path));
+        }
+        return $controllers;
     }
 
     /**
