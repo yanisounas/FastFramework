@@ -1,6 +1,7 @@
 <?php
 //TODO: Exceptions code and messages
 //TODO: Use "realpath" in some cases instead of DIRECTORY_SEPARATOR + can help to guess the absolute path
+ini_set('display_errors', 1);
 
 if (is_file($_SERVER["DOCUMENT_ROOT"] . $_SERVER["REQUEST_URI"]))
 {
@@ -14,6 +15,8 @@ if (is_file($_SERVER["DOCUMENT_ROOT"] . $_SERVER["REQUEST_URI"]))
 }
 
 require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR . "autoload.php";
+
+\Dotenv\Dotenv::createImmutable(dirname(__DIR__))->load();
 
 $router = new \FastFramework\Router\Router();
 try {
