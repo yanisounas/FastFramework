@@ -38,15 +38,19 @@ class QueryBuilder
 
     /**
      * @param string $query
+     * @param QueryMethod $method
      * @return $this
      */
-    #[Deprecated("Unsafe method")]
-    public function setQueryString(string $query): QueryBuilder
+    public function setQueryString(string $query, QueryMethod $method = QueryMethod::CUSTOM): QueryBuilder
     {
-        // TODO: remove this method (only here to use join or more complexe queries while they're not implemented)
-        $this->method = QueryMethod::CUSTOM;
+        $this->method = $method;
         $this->query = $query;
         return $this;
+    }
+
+    public function setValues(array $values): void
+    {
+        $this->values = $values;
     }
 
     /**
@@ -118,7 +122,7 @@ class QueryBuilder
     public function where(?array $where_data = null, mixed ...$data): QueryBuilder
     {
         $where_data ??= $data;
-        $this->where ??= " WHERE ";
+        $this->where = " WHERE ";
 
         $datas = [];
         foreach ($where_data as $key => $value)
@@ -146,7 +150,7 @@ class QueryBuilder
      */
     public function orderBy(array $order_data): QueryBuilder
     {
-        $this->order ??= " ORDER BY ";
+        $this->order = " ORDER BY ";
         $temp = [];
 
         if(array_keys($order_data) !== range(0, count($order_data) - 1))
@@ -190,7 +194,7 @@ class QueryBuilder
      */
     public function limit(int $limit = 1): QueryBuilder
     {
-        $this->limit ??= " LIMIT $limit";
+        $this->limit = " LIMIT $limit";
         return $this;
     }
 
@@ -217,11 +221,7 @@ class QueryBuilder
             $this->_where()->_order()->_limit();
 
 
-            if ($this->values)
-                array_walk($this->values, function (&$item)
-                {
-                    $item = htmlspecialchars($item);
-                });
+            if ($this->values) array_walk($this->values, function (&$item) { $item = htmlspecialchars($item); });
 
             $this->query = $this->db->prepare($this->query);
             $this->query->execute($this->values);
@@ -239,27 +239,29 @@ class QueryBuilder
 
     /**
      * @param int $mode
+     * @param mixed ...$args
      * @return mixed
      * @throws ORMException
      */
-    public function fetchOne(int $mode = PDO::FETCH_ASSOC): mixed
+    public function fetchOne(int $mode = PDO::FETCH_BOTH, $cursorOrientation = PDO::FETCH_ORI_NEXT, int $cursorOffset = 0): mixed
     {
         if (!$this->query instanceof PDOStatement) throw new ORMException("Query need to be executed first");
         if ($this->method !== QueryMethod::SELECT && $this->method !== QueryMethod::CUSTOM) throw new ORMException("Fetch not supported for ". $this->method->name);
 
-        return $this->query->fetch($mode);
+        return $this->query->fetch($mode, $cursorOrientation, $cursorOffset);
     }
 
     /**
      * @param int $mode
+     * @param mixed ...$args
      * @return array|false
      * @throws ORMException
      */
-    public function fetchAll(int $mode = PDO::FETCH_ASSOC): array|false
+    public function fetchAll(int $mode = PDO::FETCH_BOTH, mixed ...$args ): array|false
     {
         if (!$this->query instanceof PDOStatement) throw new ORMException("Query need to be executed first");
         if ($this->method !== QueryMethod::SELECT && $this->method !== QueryMethod::CUSTOM) throw new ORMException("FetchAll not supported for " . $this->method->name);
 
-        return $this->query->fetchAll($mode);
+        return $this->query->fetchAll($mode, ...$args);
     }
 }

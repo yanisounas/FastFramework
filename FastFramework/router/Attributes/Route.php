@@ -59,6 +59,11 @@ class Route
     }
 
     /**
+     * @param string $prefix
+     * @return void
+     */
+    public function addPrefix(string $prefix): void {$this->path = "$prefix/$this->path";}
+    /**
      * @return string
      */
     public function getPath(): string {return $this->path;}

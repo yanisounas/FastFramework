@@ -4,6 +4,7 @@ namespace FastFramework\Router;
 
 use Exception;
 use FastFramework\FileSystem\Utils;
+use FastFramework\Router\Attributes\Group;
 use FastFramework\Router\Attributes\Route;
 use FastFramework\Router\Exceptions\MethodNotSupported;
 use FastFramework\Router\Exceptions\RouteAlreadyDeclared;
@@ -29,8 +30,17 @@ class Router
     public function loadFromController(string ...$controller): void
     {
         foreach ($controller as $c)
-            foreach ((new \ReflectionClass($c))->getMethods() as $method)
-                if ($route = $this->_isRoute($method)) $this->_routeCollection->add($route, [$c, $method->getName()]);
+        {
+            $reflect = new \ReflectionClass($c);
+            $group = (empty($attr = $reflect->getAttributes(Group::class))) ? null : $attr[0]->newInstance();
+            foreach ($reflect->getMethods() as $method)
+            {
+                if (!$route = $this->_isRoute($method)) continue;
+                if ($group !== null) $route->addPrefix($group->getGroupName() ?? strtolower(explode("Controller", array_slice(explode("\\", $reflect->getName()), -1)[0])[0]));
+
+                $this->_routeCollection->add($route, [$c, $method->getName()]);
+            }
+        }
     }
 
     /**
@@ -52,7 +62,7 @@ class Router
     private function _getControllers(?string $dir = null, ?string $suffix = null): array
     {
         $controllers = [];
-        $suffix = trim($suffix, "\\");
+        if ($suffix !== null) $suffix = trim($suffix, "\\");
         $controllerNamespace = trim("App\\Controller\\" . ($suffix ?? "$suffix"), "\\");
 
         $dir = ($dir == null) ? Utils::guessPathByNamespace($controllerNamespace) : realpath("$dir/" . ($suffix ?? "$suffix/"));

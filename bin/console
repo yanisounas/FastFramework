@@ -7,7 +7,7 @@
 
 require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR . "autoload.php";
 
-if (PHP_VERSION < "8.0.0")
+if (version_compare(PHP_VERSION, "8.0.0", "<"))
     exit("PHP version must be at least 8.0.0; Your version : " . PHP_VERSION);
 
 exec("php -S localhost:8000 -t ./public/ ./public/index.php");
