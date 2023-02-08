@@ -4,7 +4,7 @@ namespace FastFramework\Router\Exceptions;
 
 use Throwable;
 
-class RouteNotFound extends RouterException
+class MethodNotSupportedExceptions extends RouterException
 {
     public function __construct(string $message = "", int $code = 0, ?Throwable $previous = null)
     {

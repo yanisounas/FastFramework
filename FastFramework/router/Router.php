@@ -6,9 +6,9 @@ use Exception;
 use FastFramework\FileSystem\Utils;
 use FastFramework\Router\Attributes\Group;
 use FastFramework\Router\Attributes\Route;
-use FastFramework\Router\Exceptions\MethodNotSupported;
-use FastFramework\Router\Exceptions\RouteAlreadyDeclared;
-use FastFramework\Router\Exceptions\RouteNotFound;
+use FastFramework\Router\Exceptions\MethodNotSupportedExceptions;
+use FastFramework\Router\Exceptions\RouteAlreadyDeclaredExceptions;
+use FastFramework\Router\Exceptions\RouteNotFoundExceptions;
 use ReflectionException;
 use ReflectionMethod;
 
@@ -25,7 +25,7 @@ class Router
      * @param string ...$controller
      * @return void
      * @throws ReflectionException
-     * @throws RouteAlreadyDeclared
+     * @throws RouteAlreadyDeclaredExceptions
      */
     public function loadFromController(string ...$controller): void
     {
@@ -79,16 +79,16 @@ class Router
 
     /**
      * @return mixed
-     * @throws MethodNotSupported
-     * @throws RouteNotFound
+     * @throws MethodNotSupportedExceptions
+     * @throws RouteNotFoundExceptions
      */
     public function listen(): mixed
     {
         $method = $_SERVER['REQUEST_METHOD'];
         $path = (!str_contains($_SERVER['REQUEST_URI'], '?')) ? $_SERVER['REQUEST_URI'] : explode('?', $_SERVER['REQUEST_URI'])[0];
 
-        if (!$match = $this->_routeCollection->match($path)) throw new RouteNotFound("Route '$path' not found");
-        if (!in_array($method, $match["route"]->getMethod())) throw new MethodNotSupported("Method '$method' not supported");
+        if (!$match = $this->_routeCollection->match($path)) throw new RouteNotFoundExceptions("Route '$path' not found");
+        if (!in_array($method, $match["route"]->getMethod())) throw new MethodNotSupportedExceptions("Method '$method' not supported");
 
         return call_user_func_array($match["callback"], $match["route"]->getMatches());
     }

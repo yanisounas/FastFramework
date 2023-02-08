@@ -4,7 +4,7 @@ namespace FastFramework\Router;
 
 use ArrayAccess;
 use FastFramework\Router\Attributes\Route;
-use FastFramework\Router\Exceptions\RouteAlreadyDeclared;
+use FastFramework\Router\Exceptions\RouteAlreadyDeclaredExceptions;
 use JetBrains\PhpStorm\ArrayShape;
 
 class RouteCollection
@@ -22,11 +22,11 @@ class RouteCollection
      * @param Route $route
      * @param callable|array $callback
      * @return void
-     * @throws RouteAlreadyDeclared
+     * @throws RouteAlreadyDeclaredExceptions
      */
     public function add(Route $route, callable|array $callback): void
     {
-        if (isset($this->_data[$route->getPath()])) throw new RouteAlreadyDeclared(sprintf("Router %s already exists", $route->getPath()));
+        if (isset($this->_data[$route->getPath()])) throw new RouteAlreadyDeclaredExceptions(sprintf("Router %s already exists", $route->getPath()));
         if (!is_callable($callback)) $callback[0] = new $callback[0]();
 
         $this->_data[$route->getPath()] = ["route" => $route, "callback" => $callback];
