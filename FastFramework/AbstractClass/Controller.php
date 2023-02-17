@@ -7,7 +7,7 @@ use FastFramework\Response\JSONResponse;
 use FastFramework\Response\Response;
 use FastFramework\Response\View;
 
-class Controller
+abstract class Controller
 {
     /**
      * @param string $content
