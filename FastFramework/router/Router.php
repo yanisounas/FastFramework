@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace FastFramework\Router;
 
@@ -63,7 +64,7 @@ class Router
     {
         $controllers = [];
         if ($suffix !== null) $suffix = trim($suffix, "\\");
-        $controllerNamespace = trim("App\\Controller\\" . ($suffix ?? "$suffix"), "\\");
+        $controllerNamespace = trim(Utils::getSrcNamespace() . "Controller\\" . ($suffix ?? "$suffix"), "\\");
 
         $dir = ($dir == null) ? Utils::guessPathByNamespace($controllerNamespace) : realpath("$dir/" . ($suffix ?? "$suffix/"));
         if ($dir === false) throw new Exception("Can't find the controllers directory.");

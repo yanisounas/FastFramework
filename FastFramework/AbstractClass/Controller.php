@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace FastFramework\AbstractClass;
 
@@ -31,7 +32,7 @@ class Controller
 
     public function view(string $path, ?array $args = null, int $statusCode = null, bool $extract = true): View
     {
-        return new View(view: dirname($_SERVER["DOCUMENT_ROOT"]) . DIRECTORY_SEPARATOR . "template" . DIRECTORY_SEPARATOR . ((str_contains($path, ".php")) ? $path : "$path.php"),
+        return new View(view: BASE_DIR . DIRECTORY_SEPARATOR . "template" . DIRECTORY_SEPARATOR . ((str_contains($path, ".php")) ? $path : "$path.php"),
             statusCode: $statusCode,
             args: $args,
             extract: $extract);

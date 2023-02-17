@@ -1,13 +1,17 @@
 <?php
+declare(strict_types=1);
 
 namespace FastFramework\ORM;
 
 use Exception;
+use FastFramework\ORM\Exceptions\ORMException;
 
 class Database
 {
     private readonly \PDO $db;
     private readonly QueryBuilder $builder;
+
+    private static ?Database $instance = null;
 
     /**
      * @throws Exception
@@ -15,8 +19,24 @@ class Database
     public function __construct(private ?array $opts = null, string ...$opt)
     {
         $this->opts ??= $opt;
+
+        if (!isset($this->opts["DB_HOST"]) || empty($this->opts["DB_HOST"])) throw new ORMException("Host is missing");
+        if (!isset($this->opts["DB_USERNAME"]) || empty($this->opts["DB_USERNAME"])) throw new ORMException("Mysql username is missing");
+        if (!isset($this->opts["DB_PASSWORD"])) throw new ORMException("Mysql password is missing");
+        if (!isset($this->opts["DB_NAME"]) || empty($this->opts["DB_NAME"])) throw new ORMException("Database is missing");
+        if (!isset($this->opts["DB_CHARSET"]) || empty($this->opts["DB_CHARSET"])) $this->opts["DB_CHARSET"] = "utf8";
+        if (!isset($this->opts["DB_PORT"]) || empty($this->opts["DB_PORT"])) $this->opts["DB_PORT"] = 3306;
+
         $this->_connect();
         $this->builder = QueryBuilder::getInstance($this->db);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public static function getInstance(?array $opts = null, string ...$opt): Database
+    {
+        return (self::$instance !== null) ? self::$instance : (self::$instance = new Database($opts, ...$opt));
     }
 
     /**

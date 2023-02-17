@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace FastFramework\ORM;
 
@@ -239,11 +240,12 @@ class QueryBuilder
 
     /**
      * @param int $mode
-     * @param mixed ...$args
+     * @param int $cursorOrientation
+     * @param int $cursorOffset
      * @return mixed
      * @throws ORMException
      */
-    public function fetchOne(int $mode = PDO::FETCH_BOTH, $cursorOrientation = PDO::FETCH_ORI_NEXT, int $cursorOffset = 0): mixed
+    public function fetchOne(int $mode = PDO::FETCH_BOTH, int $cursorOrientation = PDO::FETCH_ORI_NEXT, int $cursorOffset = 0): mixed
     {
         if (!$this->query instanceof PDOStatement) throw new ORMException("Query need to be executed first");
         if ($this->method !== QueryMethod::SELECT && $this->method !== QueryMethod::CUSTOM) throw new ORMException("Fetch not supported for ". $this->method->name);

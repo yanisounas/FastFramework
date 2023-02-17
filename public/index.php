@@ -1,6 +1,6 @@
 <?php
 //TODO: Exceptions code and messages
-//TODO: Use "realpath" in some cases instead of DIRECTORY_SEPARATOR + can help to guess the absolute path
+declare(strict_types=1);
 define("BASE_DIR", dirname(__DIR__));
 ini_set('display_errors', 1);
 
@@ -15,7 +15,7 @@ if (is_file($_SERVER["DOCUMENT_ROOT"] . $_SERVER["REQUEST_URI"]))
     die;
 }
 
-require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR . "autoload.php";
+require_once BASE_DIR . DIRECTORY_SEPARATOR . "vendor" . DIRECTORY_SEPARATOR . "autoload.php";
 
 \Dotenv\Dotenv::createImmutable(dirname(__DIR__))->load();
 

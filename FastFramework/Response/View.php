@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace FastFramework\Response;
 
@@ -25,15 +26,14 @@ class View extends Response
 
         $this->rawContent = ob_get_clean();
 
-
         $this->render();
     }
 
     public function render(): void
     {
-        if (preg_match_all("#{% ?base ?\"(?<filename>\w+(.html|.php)?)?\" ?%}#", $this->rawContent, $matches))
+        if (preg_match_all("#{% ?base ?[\"'](?<filename>\w+(.html|.php)?)?[\"'] ?%}#", $this->rawContent, $matches))
         {
-            $this->rawContent = preg_replace("#{% ?base ?\"(\w+(.html|.php)?)?\" ?%}#", "", $this->rawContent);
+            $this->rawContent = preg_replace("#{% ?base ?[\"'](\w+(.html|.php)?)?[\"'] ?%}#", "", $this->rawContent);
             $fileName = (is_file(sprintf("%s.html", dirname($this->view) . DIRECTORY_SEPARATOR . $matches["filename"][0]))) ? $matches["filename"][0].".html" : $matches["filename"][0].".php";
 
             ob_start();
