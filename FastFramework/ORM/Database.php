@@ -16,14 +16,12 @@ class Database
     /**
      * @throws Exception
      */
-    public function __construct(private ?array $opts = null, string ...$opt)
+    public function __construct(private array $opts)
     {
-        $this->opts ??= $opt;
-
-        if (!isset($this->opts["DB_HOST"]) || empty($this->opts["DB_HOST"])) throw new ORMException("Host is missing");
-        if (!isset($this->opts["DB_USERNAME"]) || empty($this->opts["DB_USERNAME"])) throw new ORMException("Mysql username is missing");
-        if (!isset($this->opts["DB_PASSWORD"])) throw new ORMException("Mysql password is missing");
-        if (!isset($this->opts["DB_NAME"]) || empty($this->opts["DB_NAME"])) throw new ORMException("Database is missing");
+        if (!isset($this->opts["DB_HOST"]) || empty($this->opts["DB_HOST"])) throw new ORMException("Host is missing. Set DB_HOST in .env file");
+        if (!isset($this->opts["DB_USERNAME"]) || empty($this->opts["DB_USERNAME"])) throw new ORMException("Mysql username is missing. Set DB_USERNAME in .env file");
+        if (!isset($this->opts["DB_PASSWORD"])) throw new ORMException("Mysql password is missing. Set DB_PASSWORD in .env file");
+        if (!isset($this->opts["DB_NAME"]) || empty($this->opts["DB_NAME"])) throw new ORMException("Database is missing. Set DB_NAME in .env file");
         if (!isset($this->opts["DB_CHARSET"]) || empty($this->opts["DB_CHARSET"])) $this->opts["DB_CHARSET"] = "utf8";
         if (!isset($this->opts["DB_PORT"]) || empty($this->opts["DB_PORT"])) $this->opts["DB_PORT"] = 3306;
 
@@ -34,9 +32,9 @@ class Database
     /**
      * @throws Exception
      */
-    public static function getInstance(?array $opts = null, string ...$opt): Database
+    public static function getInstance(array $opts): Database
     {
-        return (self::$instance !== null) ? self::$instance : (self::$instance = new Database($opts, ...$opt));
+        return (self::$instance !== null) ? self::$instance : (self::$instance = new Database($opts));
     }
 
     /**

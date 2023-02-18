@@ -20,7 +20,7 @@ class ORM
      */
     public function __construct()
     {
-        $this->db = Database::getInstance($_ENV["DB_HOST"], $_ENV["DB_USERNAME"], $_ENV["DB_PASSWORD"], $_ENV["DB_NAME"], $_ENV["DB_CHARSET"], $_ENV["DB_PORT"]);
+        $this->db = Database::getInstance( array_filter($_ENV, function($key) { return str_starts_with($key, "DB_"); }, ARRAY_FILTER_USE_KEY) );
     }
 
     /**
@@ -28,9 +28,19 @@ class ORM
      */
     private function _getEntityReflect(string $entityName): ReflectionClass
     {
-        $namespace = Utils::getSrcNamespace() . "Entity\\" . ((str_ends_with($entityName, "Entity")) ? $entityName :  $entityName . "Entity");
-        try { return new ReflectionClass($namespace); }
-        catch (ReflectionException) { throw new ORMException("Entity not found '$entityName'"); }
+        $entityClass = (str_ends_with($entityName, "Entity")) ? $entityName : $entityName . "Entity";
+        $namespace = Utils::getSrcNamespace() . "Entity\\$entityClass";
+        try
+        {
+            $reflect = new ReflectionClass($namespace);
+            if (!$reflect->isSubclassOf(Entity::class)) throw new ORMException("$namespace must be a subclass of Entity");
+            if ($reflect->getProperty("TABLE_NAME")->getValue() === null) $reflect->setStaticPropertyValue("TABLE_NAME", str_replace("Entity", "", $entityName));
+            return $reflect;
+        }
+        catch (ReflectionException $e)
+        {
+            throw new ORMException("Can't create reflection for $namespace\nDetails: " . $e->getMessage());
+        }
     }
 
     /**
