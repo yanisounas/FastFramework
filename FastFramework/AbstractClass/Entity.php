@@ -4,10 +4,12 @@ declare(strict_types=1);
 namespace FastFramework\AbstractClass;
 
 use FastFramework\ORM\Attributes\Column;
+use ReflectionProperty;
 
 abstract class Entity
 {
     public static ?string $TABLE_NAME = null;
+    protected ?array $columns = null;
 
     #[Column("int", 11, "AUTO_INCREMENT, PRIMARY KEY")]
     protected int $id;
@@ -22,16 +24,15 @@ abstract class Entity
         return $this->$name;
     }
 
-    public function toAssocArray(): array
-    {
-        $assocArray = [];
-        foreach ((new \ReflectionClass($this))->getProperties() as $property)
-            if ($property->getName() != "id" && count($property->getAttributes(Column::class)) > 0)
-                $assocArray[$property->getName()] = $property->getValue($this);
+    /**
+     * @return array
+     */
+    public function toAssocArray(): array { return array_diff($this->getColumns(), ["id"]); }
 
-        return $assocArray;
-    }
-
+    /**
+     * @param array $entities
+     * @return array
+     */
     public static function toAssocArrayAll(array &$entities): array
     {
         foreach ($entities as &$entity)
@@ -40,6 +41,10 @@ abstract class Entity
         return $entities;
     }
 
+    /**
+     * @param array $values
+     * @return $this
+     */
     public function load(array $values): Entity
     {
         foreach ($values as $key => $value)
@@ -48,8 +53,29 @@ abstract class Entity
         return $this;
     }
 
-    public function getId(): int
+    /**
+     * @return int
+     */
+    public function getId(): int { return $this->id; }
+
+    /**
+     * @param ReflectionProperty $property
+     * @return bool
+     */
+    public function isColumn(ReflectionProperty $property): bool { return count($property->getAttributes(Column::class)) > 0; }
+
+    /**
+     * @return array
+     */
+    public function getColumns(): array
     {
-        return $this->id;
+        if ($this->columns === null)
+        {
+            foreach ((new \ReflectionClass($this))->getProperties() as $property)
+                if ($this->isColumn($property))
+                    $this->columns[$property->getName()] = $property->getValue($this);
+        }
+
+        return $this->columns;
     }
 }
