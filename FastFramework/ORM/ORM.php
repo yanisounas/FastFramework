@@ -29,17 +29,17 @@ class ORM
     private function _getEntityReflect(string $entityName): ReflectionClass
     {
         $entityClass = (str_ends_with($entityName, "Entity")) ? $entityName : $entityName . "Entity";
-        $namespace = Utils::getSrcNamespace() . "Entity\\$entityClass";
+        $entityNameWithNamespace = Utils::getSrcNamespace() . "Entity\\$entityClass";
         try
         {
-            $reflect = new ReflectionClass($namespace);
-            if (!$reflect->isSubclassOf(Entity::class)) throw new ORMException("$namespace must be a subclass of Entity");
+            $reflect = new ReflectionClass($entityNameWithNamespace);
+            if (!$reflect->isSubclassOf(Entity::class)) throw new ORMException("$entityNameWithNamespace must be a subclass of Entity");
             if ($reflect->getProperty("TABLE_NAME")->getValue() === null) $reflect->setStaticPropertyValue("TABLE_NAME", str_replace("Entity", "", $entityName));
             return $reflect;
         }
         catch (ReflectionException $e)
         {
-            throw new ORMException("Can't create reflection for $namespace\nDetails: " . $e->getMessage());
+            throw new ORMException("Can't create reflection for $entityNameWithNamespace\nDetails: " . $e->getMessage());
         }
     }
 
