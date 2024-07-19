@@ -9,6 +9,10 @@
     "require": {
       "ext-fileinfo": "*",
         "vlucas/phpdotenv": "^5.5",
-      "ext-pdo": "*"
-    }
+      "ext-pdo": "*",
+        "composer": "*",
+        "psr/http-message": "^2.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

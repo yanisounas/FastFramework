@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace FastFramework\ORM;
 
-use Exception;
 use FastFramework\AbstractClass\Entity;
 use FastFramework\FileSystem\Utils;
 use FastFramework\ORM\Exceptions\ORMException;
@@ -16,11 +15,13 @@ class ORM
     private readonly Database $db;
 
     /**
-     * @throws Exception
+     * @throws ORMException
      */
     public function __construct()
     {
-        $this->db = Database::getInstance( array_filter($_ENV, function($key) { return str_starts_with($key, "DB_"); }, ARRAY_FILTER_USE_KEY) );
+        $this->db = Database::getInstance(
+            array_filter($_ENV, fn($key) => str_starts_with($key, "DB_"), ARRAY_FILTER_USE_KEY)
+        );
     }
 
     /**
@@ -39,7 +40,7 @@ class ORM
         }
         catch (ReflectionException $e)
         {
-            throw new ORMException("Can't create reflection for $entityNameWithNamespace\nDetails: " . $e->getMessage());
+            throw new ORMException("Can't create reflection for $entityNameWithNamespace: " . $e->getMessage());
         }
     }
 
@@ -50,9 +51,12 @@ class ORM
      */
     private function _removeBadProperties(array $entityProperties, array &$values): void
     {
-        array_walk($entityProperties, function (&$item) { $item = ($item instanceof ReflectionProperty) ? $item->getName() : $item; });
+        array_walk(
+            $entityProperties,
+            function (&$item) { $item = ($item instanceof ReflectionProperty) ? $item->getName() : $item; }
+        );
 
-        $values = array_filter($values, function($key) use ($entityProperties) { return in_array($key, $entityProperties); }, ARRAY_FILTER_USE_KEY);
+        $values = array_filter($values, fn($key) => in_array($key, $entityProperties), ARRAY_FILTER_USE_KEY);
     }
 
     /**
@@ -64,14 +68,12 @@ class ORM
         $reflect = $this->_getEntityReflect($entityName);
         $response = $this->db->builder()->select( $reflect->getProperty("TABLE_NAME")->getValue() )->exec()->fetchAll();
 
-       array_walk($response, function(&$item) use ($reflect)
-       {
-            $entity = $reflect->newInstance();
-            $entity->load($item);
-            $item = $entity;
-       });
+        array_walk(
+            $response,
+            function(&$item) use ($reflect) {$item = ($reflect->newInstance())->load($item); }
+        );
 
-       return $response;
+        return $response;
     }
 
     /**

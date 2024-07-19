@@ -3,17 +3,13 @@ declare(strict_types=1);
 
 namespace FastFramework\ORM;
 
-use Exception;
 use FastFramework\ORM\Exceptions\ORMException;
-use JetBrains\PhpStorm\Deprecated;
 use PDO;
-use PDOException;
 use PDOStatement;
 
 class QueryBuilder
 {
-
-    private \PDOStatement|string $query;
+    private PDOStatement|string|null $query = null;
     private ?string $where = null;
     private ?string $order = null;
     private ?array $values = null;
@@ -58,23 +54,27 @@ class QueryBuilder
      * @param string $table
      * @param array $columns
      * @return $this
+     * @throws ORMException
      */
     public function select(string $table, array $columns = ['*']): QueryBuilder
     {
         $this->method = QueryMethod::SELECT;
-        $columns = implode(', ', $columns);
-        $this->query = "SELECT $columns FROM $table";
+        $this->validateIdentifier($table);
+        $columns = implode(', ', array_map(fn($col) => "`$col`", $columns));
+        $this->query = "SELECT $columns FROM `$table`";
         return $this;
     }
 
     /**
      * @param string $table
      * @return $this
+     * @throws ORMException
      */
     public function delete(string $table): QueryBuilder
     {
         $this->method = QueryMethod::DELETE;
-        $this->query = "DELETE FROM $table";
+        $this->validateIdentifier($table);
+        $this->query = "DELETE FROM `$table`";
         return $this;
     }
 
@@ -82,17 +82,15 @@ class QueryBuilder
      * @param string $table
      * @param array $values
      * @return $this
+     * @throws ORMException
      */
     public function update(string $table, array $values): QueryBuilder
     {
         $this->method = QueryMethod::UPDATE;
-        $this->query = "UPDATE $table SET ";
+        $this->validateIdentifier($table);
+        $datas = implode(', ', array_map(fn($key) => "`$key` = ?", array_keys($values)));
+        $this->query = "UPDATE `$table` SET $datas";
 
-        $datas = [];
-        foreach ($values as $key => $value)
-            $datas[] = "$key=?";
-
-        $this->query .= implode(', ', $datas);
         $this->values = array_merge(($this->values ?? []), array_values($values));
 
         return $this;
@@ -102,14 +100,16 @@ class QueryBuilder
      * @param string $table
      * @param array $values
      * @return $this
+     * @throws ORMException
      */
     public function insert(string $table, array $values): QueryBuilder
     {
         $this->method = QueryMethod::INSERT;
+        $this->validateIdentifier($table);
 
-        $columns = implode(', ', array_keys($values));
-        $prepared = implode(', ', array_fill(0, count($values), '?'));
-        $this->query = "INSERT INTO `$table`($columns) VALUES($prepared)";
+        $columns = implode(", ", array_map(fn($col) => "`$col`", array_keys($values)));
+        $placeholders = implode(', ', array_fill(0, count($values), '?'));
+        $this->query = "INSERT INTO `$table`($columns) VALUES($placeholders)";
 
         $this->values = array_values($values);
         return $this;
@@ -119,28 +119,18 @@ class QueryBuilder
      * @param array|null $where_data
      * @param mixed ...$data
      * @return $this
+     * @throws ORMException
      */
     public function where(?array $where_data = null, mixed ...$data): QueryBuilder
     {
         $where_data ??= $data;
-        $this->where = " WHERE ";
 
-        $datas = [];
-        foreach ($where_data as $key => $value)
-            $datas[] = "$key=?";
-
-        $this->where .= implode(', ', $datas);
-        $this->values = array_merge(($this->values ?? []), array_values($where_data));
-
-        return $this;
-    }
-
-    /**
-     * @return QueryBuilder
-     */
-    private function _where(): QueryBuilder
-    {
-        if (!is_null($this->where)) $this->query .= $this->where;
+        if ($where_data)
+        {
+            $conditions = implode(", ", array_map(fn($key) => "`". $this->validateIdentifier($key) ."` = ?", array_keys($where_data)));
+            $this->where = " WHERE $conditions";
+            $this->values = array_merge(($this->values ?? []), array_values($where_data));
+        }
 
         return $this;
     }
@@ -151,40 +141,12 @@ class QueryBuilder
      */
     public function orderBy(array $order_data): QueryBuilder
     {
-        $this->order = " ORDER BY ";
-        $temp = [];
-
-        if(array_keys($order_data) !== range(0, count($order_data) - 1))
-        {
-            foreach ($order_data as $k => $v)
-            {
-                if (gettype($k) == 'integer')
-                {
-                    $k = $v;
-                    $v = "ASC";
-                }
-
-                $temp[] = "$k $v";
-            }
-        }
-        else
-        {
-            foreach ($order_data as $data)
-            {
-                $temp[] = "$data ASC";
-            }
-        }
-
-        $this->order .= implode(', ', $temp);
-        return $this;
-    }
-
-    /**
-     * @return QueryBuilder
-     */
-    private function _order(): QueryBuilder
-    {
-        if (!is_null($this->order)) $this->query .= $this->order;
+        $order = implode(", ", array_map(
+            fn($column, $direction) => "`$column` $direction",
+            array_keys($order_data),
+            $order_data
+        ));
+        $this->order = $order;
 
         return $this;
     }
@@ -200,41 +162,35 @@ class QueryBuilder
     }
 
     /**
-     * @return $this
-     */
-    public function _limit(): QueryBuilder
-    {
-        if (!is_null($this->limit)) $this->query .= $this->limit;
-
-        return $this;
-    }
-
-    /**
      * @throws ORMException
      */
     public function exec(): QueryBuilder
     {
+        if ($this->query === null) throw new ORMException("No query set");
+        if ($this->query instanceof PDOStatement) throw new ORMException("A query is already executed, create a new query before exec");
+        if (($this->method === QueryMethod::UPDATE || $this->method === QueryMethod::DELETE) && $this->where === null) throw new ORMException("Missing WHERE clause");
+
+        $this->query .= $this->where ?? "";
+        $this->query .= $this->order ?? '';
+        $this->query .= $this->limit ?? '';
+
         try
         {
-            if (!$this->method || empty($this->query)) throw new ORMException("You have to build a query before calling this method");
-            if (($this->method === QueryMethod::UPDATE || $this->method === QueryMethod::DELETE) && is_null($this->where)) throw new ORMException($this->method->name . " need a where statement");
-
-            $this->_where()->_order()->_limit();
-
-
-            if ($this->values) array_walk($this->values, function (&$item) { $item = htmlspecialchars($item); });
-
             $this->query = $this->db->prepare($this->query);
-            $this->query->execute($this->values);
+            $this->query->execute($this->values ?? []);
 
             $this->values = null;
             $this->where = null;
             $this->limit = null;
+            $this->order = null;
 
             if ($this->method !== QueryMethod::SELECT && $this->method !== QueryMethod::CUSTOM)
                 $this->method = null;
         }
-        catch (\PDOException $e) {die(throw new \PDOException($e->getMessage()));}
+        catch (\PDOException $e)
+        {
+            throw new ORMException("Query execution failed: " . $e->getMessage(), 0, $e);
+        }
         return $this;
     }
 
@@ -265,5 +221,16 @@ class QueryBuilder
         if ($this->method !== QueryMethod::SELECT && $this->method !== QueryMethod::CUSTOM) throw new ORMException("FetchAll not supported for " . $this->method->name);
 
         return $this->query->fetchAll($mode, ...$args);
+    }
+
+    /**
+     * @throws ORMException
+     */
+    private function validateIdentifier(string $identifier): string
+    {
+        if (!preg_match("/^[a-zA-Z0-9_]+$/", $identifier))
+            throw new ORMException("Invalid identifier: $identifier");
+
+        return $identifier;
     }
 }

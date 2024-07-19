@@ -37,7 +37,7 @@ class Router
             foreach ($reflect->getMethods() as $method)
             {
                 if (!$route = $this->_isRoute($method)) continue;
-                if ($group !== null) $route->addPrefix($group->getGroupName() ?? strtolower(explode("Controller", array_slice(explode("\\", $reflect->getName()), -1)[0])[0]));
+                if ($group !== null) $route->addPrefix($group->getGroupName($reflect->getName()));
 
                 $this->_routeCollection->add($route, [$c, $method->getName()]);
             }
