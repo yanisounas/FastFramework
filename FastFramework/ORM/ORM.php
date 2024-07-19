@@ -27,20 +27,29 @@ class ORM
     /**
      * @throws ORMException
      */
-    private function _getEntityReflect(string $entityName): ReflectionClass
+    private function _getEntityReflect(string|Entity $entity): ReflectionClass
     {
-        $entityClass = (str_ends_with($entityName, "Entity")) ? $entityName : $entityName . "Entity";
-        $entityNameWithNamespace = Utils::getSrcNamespace() . "Entity\\$entityClass";
+        if (is_string($entity))
+        {
+            $entity = (str_ends_with($entity, "Entity")) ? $entity : $entity . "Entity";
+            $entity = Utils::getSrcNamespace() . "Entity\\$entity";
+        }
+
         try
         {
-            $reflect = new ReflectionClass($entityNameWithNamespace);
-            if (!$reflect->isSubclassOf(Entity::class)) throw new ORMException("$entityNameWithNamespace must be a subclass of Entity");
-            if ($reflect->getProperty("TABLE_NAME")->getValue() === null) $reflect->setStaticPropertyValue("TABLE_NAME", str_replace("Entity", "", $entityName));
+            $reflect = new ReflectionClass($entity);
+
+            if (!$reflect->isSubclassOf(Entity::class))
+                throw new ORMException( $reflect->getName() ." must be a subclass of Entity");
+
+            if ($reflect->getProperty("TABLE_NAME")->getValue() === null)
+                $reflect->setStaticPropertyValue("TABLE_NAME", str_replace("Entity", "", $reflect->getShortName()));
+
             return $reflect;
         }
         catch (ReflectionException $e)
         {
-            throw new ORMException("Can't create reflection for $entityNameWithNamespace: " . $e->getMessage());
+            throw new ORMException("Can't create reflection: " . $e->getMessage());
         }
     }
 
@@ -67,10 +76,13 @@ class ORM
     {
         $reflect = $this->_getEntityReflect($entityName);
         $response = $this->db->builder()->select( $reflect->getProperty("TABLE_NAME")->getValue() )->exec()->fetchAll();
-
         array_walk(
             $response,
-            function(&$item) use ($reflect) {$item = ($reflect->newInstance())->load($item); }
+            function(&$item) use ($reflect)
+            {
+                $this->_removeBadProperties($reflect->getProperties(), $item);
+                $item = ($reflect->newInstance())->load($item);
+            }
         );
 
         return $response;
@@ -90,6 +102,7 @@ class ORM
         $reflect = $this->_getEntityReflect($entityName);
 
         $result = $this->db->builder()->select( $reflect->getProperty("TABLE_NAME")->getValue() )->where($columnValues)->exec()->fetchOne();
+        $this->_removeBadProperties($reflect->getProperties(), $result);
 
         return ($result) ? ($reflect->newInstance())->load($result) : false;
     }
@@ -115,10 +128,12 @@ class ORM
      * @param Entity $entity
      * @return void
      * @throws ORMException
+     * @throws ReflectionException
      */
-    public function push(Entity $entity): void
+    public function persist(Entity $entity): void
     {
-        $this->db->builder()->insert($entity::$TABLE_NAME, $entity->toAssocArray())->exec();
+        $reflect = $this->_getEntityReflect($entity);
+        $this->db->builder()->insert($reflect->getProperty("TABLE_NAME")->getValue(), $entity->toAssocArray(false))->exec();
     }
 
     /**

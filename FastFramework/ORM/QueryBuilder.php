@@ -56,11 +56,11 @@ class QueryBuilder
      * @return $this
      * @throws ORMException
      */
-    public function select(string $table, array $columns = ['*']): QueryBuilder
+    public function select(string $table, array $columns = ["*"]): QueryBuilder
     {
         $this->method = QueryMethod::SELECT;
         $this->validateIdentifier($table);
-        $columns = implode(', ', array_map(fn($col) => "`$col`", $columns));
+        $columns = implode(', ', ($columns == ["*"]) ? $columns : array_map(fn($col) => "`$col`", $columns));
         $this->query = "SELECT $columns FROM `$table`";
         return $this;
     }

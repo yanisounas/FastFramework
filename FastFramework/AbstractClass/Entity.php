@@ -25,18 +25,20 @@ abstract class Entity
     }
 
     /**
+     * @param bool $withId
      * @return array
      */
-    public function toAssocArray(): array { return array_diff($this->getColumns(), ["id"]); }
+    public function toAssocArray(bool $withId = true): array { return $this->getColumns($withId); }
 
     /**
      * @param array $entities
+     * @param bool $withId
      * @return array
      */
-    public static function toAssocArrayAll(array &$entities): array
+    public static function toAssocArrayAll(array &$entities, bool $withId = true): array
     {
         foreach ($entities as &$entity)
-            $entity = $entity->toAssocArray();
+            $entity = $entity->toAssocArray($withId);
 
         return $entities;
     }
@@ -65,15 +67,24 @@ abstract class Entity
     public function isColumn(ReflectionProperty $property): bool { return count($property->getAttributes(Column::class)) > 0; }
 
     /**
+     * @param bool $withId
      * @return array
      */
-    public function getColumns(): array
+    public function getColumns(bool $withId = true): array
     {
         if ($this->columns === null)
         {
             foreach ((new \ReflectionClass($this))->getProperties() as $property)
+            {
+                if ($property->getName() == "id" && !$withId)
+                    break;
+
                 if ($this->isColumn($property))
+                {
                     $this->columns[$property->getName()] = $property->getValue($this);
+                }
+            }
+
         }
 
         return $this->columns;
