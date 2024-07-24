@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace FastFramework\Http;
 
 use Psr\Http\Message\MessageInterface;
