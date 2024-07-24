@@ -24,7 +24,7 @@ class Request implements RequestInterface
     )
     {
         $this->setHeaders($headers);
-        if (!isset($this->headersNormalized["host"])) { $this->updateHostFromUri(); }
+        if (!isset($this->headersNormalized["host"])) { $this->_updateHostFromUri(); }
         $this->protocolVersion = $protocolVersion;
         $this->body = $body;
     }
@@ -85,7 +85,7 @@ class Request implements RequestInterface
         $newRequest = clone $this;
         $newRequest->uri = $uri;
 
-        if (!$preserveHost || !isset($this->headers["host"])) { $newRequest->updateHostFromUri(); }
+        if (!$preserveHost || !isset($this->headers["host"])) { $newRequest->_updateHostFromUri(); }
 
         return $newRequest;
     }
@@ -93,7 +93,7 @@ class Request implements RequestInterface
     /*
      * Method taken from the guzzle/psr7 package
      */
-    private function updateHostFromUri(): void
+    private function _updateHostFromUri(): void
     {
         $host = $this->uri->getHost();
 
