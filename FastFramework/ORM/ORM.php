@@ -45,6 +45,8 @@ class ORM
             if ($reflect->getProperty("TABLE_NAME")->getValue() === null)
                 $reflect->setStaticPropertyValue("TABLE_NAME", str_replace("Entity", "", $reflect->getShortName()));
 
+            $reflect->setStaticPropertyValue("TABLE_NAME", strtolower($reflect->getProperty("TABLE_NAME")->getValue()));
+
             return $reflect;
         }
         catch (ReflectionException $e)

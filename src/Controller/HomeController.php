@@ -24,7 +24,7 @@ class HomeController extends Controller
         $user->username = "admin8";
         $user->password = "admin";
         $orm = new ORM();
-        $orm->push($user);
+        $orm->persist($user);
         $users = $orm->getAll("Users");
         var_dump(Entity::toAssocArrayAll($users));
 
